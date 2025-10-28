@@ -18,7 +18,7 @@ struct plugin_descriptor {
     const char*      symbol;
     unsigned int     arity;
     plugin_apply_fn  apply;
-    const char*    (*help)();
+    const char*      help;
 };
 
 PLUGIN_EXPORT const plugin_descriptor* plugin_get_descriptor();
