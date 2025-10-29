@@ -17,4 +17,6 @@ endfunction()
 
 # Список плагинов
 
-add_calc_plugin(funcadd)
+add_calc_plugin(funcdeg)
+add_calc_plugin(funcsin)
+add_calc_plugin(funcln)
