@@ -14,13 +14,15 @@ target_include_directories(plugin_api INTERFACE
 
 
 # Исполняемый файл проекта
-add_executable(calc
-    app/main.cpp
-)
+file(GLOB_RECURSE SRC_FILES ${CMAKE_SOURCE_DIR}/src/*.cpp)
+add_executable(calc ${SRC_FILES} app/main.cpp)
 
 target_link_libraries(calc PRIVATE plugin_api)
 
-target_include_directories(calc PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(calc PRIVATE 
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/plugins)
 
