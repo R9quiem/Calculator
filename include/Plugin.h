@@ -26,7 +26,7 @@ public:
         auto fn = reinterpret_cast<GetDescFn>(dll_.load_symbol_raw("plugin_get_descriptor"));
         const plugin_descriptor* d = fn();
         if (!d || !d->apply || !d->symbol || !*d->symbol)
-            throw std::runtime_error("Invalid plugin descriptor: " + dll_path.string());
+            throw std::runtime_error("Некорректный дескриптор плагина: " + dll_path.string());
 
         symbol_ = d->symbol;
         name_   = d->name ? d->name : "";
