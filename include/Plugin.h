@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "plugin_api.h"
 #include <filesystem>
 #include "DllLoader.h"
@@ -55,8 +56,9 @@ public:
         return apply_(args, n);
     }
 
-    // Удобный перегруз для vector
+    // перегрузка для std::vector
     double call(const std::vector<double>& args) const {
         return call(args.data(), args.size());
     }
+
 };
