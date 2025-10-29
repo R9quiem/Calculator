@@ -5,6 +5,7 @@
 #include "plugin_api.h"
 #include <filesystem>
 #include "DllLoader.h"
+#include <functional>
 
 struct Plugin {
     std::filesystem::path path_;
@@ -12,7 +13,7 @@ struct Plugin {
     std::string           symbol_;  
     std::string           name_;
     unsigned int          arity_{};
-    plugin_apply_fn       apply_{};
+    std::function<double(const double*, std::size_t)> exec_; //единая точка вызова
     std::string           help_{}; 
 
     using GetDescFn = const plugin_descriptor* (PLUGIN_CALL *)();
@@ -25,14 +26,30 @@ public:
     {
         auto fn = reinterpret_cast<GetDescFn>(dll_.load_symbol_raw("plugin_get_descriptor"));
         const plugin_descriptor* d = fn();
-        if (!d || !d->apply || !d->symbol || !*d->symbol)
+        if (!d || !d->apply || !d->symbol || !*d->symbol || !d->arity)
             throw std::runtime_error("Некорректный дескриптор плагина: " + dll_path.string());
 
         symbol_ = d->symbol;
         name_   = d->name ? d->name : "";
         arity_  = d->arity;
-        apply_  = d->apply;
         help_   = d->help ? d->help : "no info";
+
+        auto fp = d->apply;
+        exec_ = [fp](const double* args, unsigned int n) -> double {
+            return fp(args,n);
+        };
+    }
+    using builtin_fn = double (*)(const double*, std::size_t);
+    Plugin(const std::string symbol, const std::string name, const unsigned int arity,
+           builtin_fn fn, std::string help = "no info")
+        : symbol_(symbol),
+          name_  (name),
+          help_  (help),
+          arity_ (arity),
+          exec_  (fn)
+    {
+        if (symbol_.empty() || !exec_ || arity_)
+            throw std::invalid_argument("Встроенный плагин: нету символа/функции/арности");
     }
     Plugin(const Plugin&) = delete;
     Plugin& operator=(const Plugin&) = delete;
@@ -49,11 +66,11 @@ public:
 
     // Вызов операции
     double call(const double* args, std::size_t n) const {
-        if (!apply_) throw std::runtime_error("Плагин не инициализирован");
+        if (!exec_) throw std::runtime_error("Плагин не инициализирован");
 
         if (arity_ != 0 && n != arity_)
             throw std::invalid_argument("Неверное число аргументов");
-        return apply_(args, n);
+        return exec_(args, n);
     }
 
     // перегрузка для std::vector
