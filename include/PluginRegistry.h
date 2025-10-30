@@ -4,6 +4,11 @@
 #include <string>
 #include <stdexcept>
 #include <iostream>
+#include <memory>
+#include <vector>
+#include <string_view>
+#include <windows.h>
+#include <algorithm>
 
 #include "Plugin.h"
 
@@ -27,14 +32,19 @@ public:
         return it->second->assoc() == Associativity::ASSOC_RIGHT;
     }
     void add(std::unique_ptr<Plugin> p) {
+        std::string sym = p->symbol(), name = p->name(); 
         plugins[p->symbol()] = std::move(p);
-        std::cout << "Загружен плагин: " << p->symbol() << " (" << p->name() << ") " << std::endl;
+        std::cout << "Загружен плагин: " << sym << " (" << name << ") " << std::endl;
     }
-    std::vector<std::string_view> get_all_sym() const {
-        std::vector<std::string_view> symbols;
-        for(const auto& [sym, plugin] : plugins) {
-            symbols.push_back(sym);
+    std::vector<std::string> get_all_sym() const {
+        std::vector<std::string> symbols;
+        symbols.reserve(plugins.size());
+        for (const auto& [sym, plugin] : plugins) {
+            symbols.push_back(sym); // копия — string_view не нужен и не «висячий»
         }
+        // полезно, если будут многосимвольные токены (например, "==", "<=", "**")
+        std::sort(symbols.begin(), symbols.end(),
+                [](const std::string& a, const std::string& b){ return a.size() > b.size(); });
         return symbols;
     }
 };

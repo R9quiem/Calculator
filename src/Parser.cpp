@@ -8,20 +8,24 @@ std::string Parser::parse_token() {
 
     if (std::isdigit((unsigned char)*it)) {
         std::string number;
-        while (it != end && std::isdigit((unsigned char)*it) || *it == '.') 
+        while (it != end && (std::isdigit((unsigned char)*it) || *it == '.')) 
             number.push_back(*it++);
         return number;
     }
 
-    const std::vector<std::string_view> tokens = r.get_all_sym();
+    if (*it == '(' || *it == ')') {
+        char c = *it++;
+        return std::string(1, c);
+    }
 
-    for (std::string_view t : tokens) {
+    const auto tokens = r.get_all_sym(); // см. ниже реализацию get_all_sym()
+
+    for (const auto& t : tokens) {
         unsigned int remain = static_cast<unsigned int>(std::distance(it, end));
-
-        if (remain >= t.size() && std::string_view(&*it, t.size()) == t) {
+        if (remain >= t.size() && std::string_view(&*it, t.size()) == std::string_view(t))
+        {
             it += t.size();
-            return std::string(t);
-
+            return t;
         }
     }
 
@@ -50,17 +54,25 @@ Expression Parser::parse_expression(int min_priority) {
 
     for (;;) {
         auto op = parse_token();
-        int p = r.priority_of(op);
+
+        if (op.empty() || op == ")") {
+            it -= op.size();   // для ")" возвращаем указатель на место
+            return left_expr;
+        }
+
+        if (op.empty())
+            return left_expr;
+
+        int p = r.priority_of(op);      
 
         if (p <= min_priority) {
-            it -= op.size();
+            it -= op.size();          
             return left_expr;
         }
 
         int next_min = r.is_right_assoc(op) ? (p - 1) : p;
         auto right_expr = parse_expression(next_min);
-
-        left_expr = Expression(std::move(op), std::move(left_expr), std::move(right_expr)); 
+        left_expr = Expression(std::move(op), std::move(left_expr), std::move(right_expr));
     }
 }
 
