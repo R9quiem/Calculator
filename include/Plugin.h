@@ -7,6 +7,11 @@
 #include "DllLoader.h"
 #include <functional>
 
+enum class Associativity : unsigned int {
+    ASSOC_LEFT  = 0,
+    ASSOC_RIGHT = 1,  
+};
+
 struct Plugin {
     std::filesystem::path path_;
     DllLoader             dll_;       // владелец загруженной DLL
@@ -15,6 +20,9 @@ struct Plugin {
     unsigned int          arity_{};
     std::function<double(const double*, std::size_t)> exec_; //единая точка вызова
     std::string           help_{}; 
+
+    unsigned int          priority_;
+    Associativity         assoc_;
 
     using GetDescFn = const plugin_descriptor* (PLUGIN_CALL *)();
 
@@ -33,6 +41,8 @@ public:
         name_   = d->name ? d->name : "";
         arity_  = d->arity;
         help_   = d->help ? d->help : "no info";
+        priority_ = d->priority;
+        assoc_ = static_cast<Associativity>(d->associativity);
 
         auto fp = d->apply;
         exec_ = [fp](const double* args, unsigned int n) -> double {
@@ -41,14 +51,18 @@ public:
     }
     using builtin_fn = double (*)(const double*, std::size_t);
     Plugin(const std::string symbol, const std::string name, const unsigned int arity,
-           builtin_fn fn, std::string help = "no info")
-        : symbol_(symbol),
-          name_  (name),
-          help_  (help),
-          arity_ (arity),
-          exec_  (fn)
+           builtin_fn fn, std::string help = "no info",
+            Associativity assoc = Associativity::ASSOC_LEFT, unsigned int priority = 0
+        )
+        : symbol_   (symbol),
+          name_     (name),
+          help_     (help),
+          arity_    (arity),
+          exec_     (fn),
+          assoc_    (assoc),
+          priority_ (priority)
     {
-        if (symbol_.empty() || !exec_ || arity_)
+        if (symbol_.empty() || !exec_ || !arity_)
             throw std::invalid_argument("Встроенный плагин: нету символа/функции/арности");
     }
     Plugin(const Plugin&) = delete;
@@ -58,11 +72,13 @@ public:
     Plugin(Plugin&&) noexcept = default;
     Plugin& operator=(Plugin&&) noexcept = default;
 
-    const std::string& symbol() const noexcept { return symbol_; }
-    const std::string& name()   const noexcept { return name_; }
-    unsigned int arity()         const noexcept { return arity_; }
+    const std::string& symbol()         const noexcept { return symbol_; }
+    const std::string& name()           const noexcept { return name_; }
+    unsigned int arity()                const noexcept { return arity_; }
     const std::filesystem::path& path() const noexcept { return path_; }
-    std::string help() const noexcept { return help_; }
+    std::string help()                  const noexcept { return help_; }
+    unsigned int priority()             const noexcept { return priority_; }
+    Associativity assoc()               const noexcept { return assoc_; }
 
     // Вызов операции
     double call(const double* args, std::size_t n) const {

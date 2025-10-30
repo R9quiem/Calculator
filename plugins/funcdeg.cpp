@@ -17,7 +17,7 @@ static double PLUGIN_CALL deg_apply(const double* a, unsigned int n) {
 static const char *help = "<operand 1> ^ <operand 2> — возведение <operand 1> в степень <operand 2>."; 
 
 static const plugin_descriptor desc{
-    "Exponentiation", "^", 2, &deg_apply, help
+    "Exponentiation", "^", 2, &deg_apply, help, 3, ASSOC_RIGHT
 };
 
 PLUGIN_EXPORT const plugin_descriptor* plugin_get_descriptor() { return &desc; }    
