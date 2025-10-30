@@ -18,7 +18,7 @@ struct Plugin {
     std::string           symbol_;  
     std::string           name_;
     unsigned int          arity_{};
-    std::function<double(const double*, std::size_t)> exec_; //единая точка вызова
+    std::function<double(const double*, unsigned int)> exec_; //единая точка вызова
     std::string           help_{}; 
 
     unsigned int          priority_;
@@ -49,7 +49,7 @@ public:
             return fp(args,n);
         };
     }
-    using builtin_fn = double (*)(const double*, std::size_t);
+    using builtin_fn = double (*)(const double*, unsigned int);
     Plugin(const std::string symbol, const std::string name, const unsigned int arity,
            builtin_fn fn, std::string help = "no info",
             Associativity assoc = Associativity::ASSOC_LEFT, unsigned int priority = 0
@@ -81,7 +81,7 @@ public:
     Associativity assoc()               const noexcept { return assoc_; }
 
     // Вызов операции
-    double call(const double* args, std::size_t n) const {
+    double call(const double* args, unsigned int n) const {
         if (!exec_) throw std::runtime_error("Плагин не инициализирован");
 
         if (arity_ != 0 && n != arity_)
