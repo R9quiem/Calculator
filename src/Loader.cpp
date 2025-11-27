@@ -9,6 +9,13 @@ void load_builtin_plugins(PluginRegistry& reg){
                                      Associativity::ASSOC_LEFT, 2));
     reg.add(std::make_unique<Plugin>("/", "Division", 2, div_fn, "a / b",
                                      Associativity::ASSOC_LEFT, 2));
+    reg.add(std::make_unique<Plugin>("u-",
+        "Unary minus",
+        1,                       
+        unary_minus_fn,         
+        "-x",
+        Associativity::ASSOC_RIGHT, 
+        3));             
 }
 
 void load_dll_plugins(PluginRegistry& reg){
